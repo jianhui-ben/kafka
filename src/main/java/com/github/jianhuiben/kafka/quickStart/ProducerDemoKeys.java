@@ -22,7 +22,7 @@ public class ProducerDemoKeys {
         KafkaProducer<String, String> producer = new KafkaProducer<String, String>(properties);
 
         for (int i=0; i <10; i++) {
-            String topic  = "secondTopic";
+            String topic  = "firstTopic";
             String value = "message" + i;
             String key = "id_" + i;
             ProducerRecord<String, String> record = new ProducerRecord<String, String>(topic, key, value);

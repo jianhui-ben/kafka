@@ -44,10 +44,6 @@ public class ConsumerDemo {
                 logger.info("Partition: " + record.partition() + ", Offset: " + record.offset());
             }
         }
-
-
-
-
     }
 
 }
