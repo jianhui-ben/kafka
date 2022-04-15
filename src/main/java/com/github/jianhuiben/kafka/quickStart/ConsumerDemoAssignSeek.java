@@ -35,7 +35,7 @@ public class ConsumerDemoAssignSeek {
 
         //assign and seek are mostly used to relay data or fetch a specific message
 
-        // assign to a specific partition of a topic
+        // assign to a specific partition of a topic, while subscribe is for the topic
         TopicPartition partitionToReadFrom = new TopicPartition(topic, 0);
         long offsetToReadFrom = 15L;
         consumer.assign(Arrays.asList(partitionToReadFrom));
