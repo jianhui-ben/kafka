@@ -22,6 +22,8 @@ public class ProducerDemo {
         //create the producer
         KafkaProducer<String, String> producer = new KafkaProducer<String, String>(properties);
 
+        //create a producer record and send - asyncchronous
+
         for (int i=0; i <10; i++) {
             ProducerRecord<String, String> record = new ProducerRecord<String, String>("firstTopic", "message" + i);
             producer.send(record, new Callback() {
@@ -41,8 +43,6 @@ public class ProducerDemo {
                 }
             });
         }
-        //create a producer record and send - asyncchronous
-
 
         //flush the data
         producer.flush();
