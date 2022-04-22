@@ -45,7 +45,6 @@ public class ProducerDemoKeys {
         }
         //create a producer record and send - asyncchronous
 
-
         //flush the data
         producer.flush();
         //flush and close the producer
