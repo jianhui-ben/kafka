@@ -1,6 +1,5 @@
-package com.github.jianhuiben.kafka.twitterProject;
+package kafka.twitterProject;
 
-import com.github.jianhuiben.kafka.quickStart.ProducerDemoKeys;
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
@@ -48,7 +47,6 @@ public class twitterProducer {
 
     public KafkaProducer<String, String> createKafkaProducer() {
         String bootstrapServers = "localhost:9092";
-        Logger logger = LoggerFactory.getLogger(String.valueOf(ProducerDemoKeys.class));
         // create producer properties https://docs.confluent.io/platform/current/installation/configuration/producer-configs.html
         Properties properties = new Properties();
         properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);

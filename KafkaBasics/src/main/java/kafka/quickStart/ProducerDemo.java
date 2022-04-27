@@ -1,4 +1,4 @@
-package com.github.jianhuiben.kafka.quickStart;
+package kafka.quickStart;
 
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -7,10 +7,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 
-public class ProducerDemoKeys {
+public class ProducerDemo {
     public static void main(String[] args) {
         String bootstrapServers = "localhost:9092";
-        Logger logger = LoggerFactory.getLogger(String.valueOf(ProducerDemoKeys.class));
+        Logger logger = LoggerFactory.getLogger(String.valueOf(ProducerDemo.class));
         // create producer properties https://docs.confluent.io/platform/current/installation/configuration/producer-configs.html
         Properties properties = new Properties();
         properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -21,11 +21,10 @@ public class ProducerDemoKeys {
         //create the producer
         KafkaProducer<String, String> producer = new KafkaProducer<String, String>(properties);
 
+        //create a producer record and send - asyncchronous
+
         for (int i=0; i <10; i++) {
-            String topic  = "firstTopic";
-            String value = "message" + i;
-            String key = "id_" + i;
-            ProducerRecord<String, String> record = new ProducerRecord<String, String>(topic, key, value);
+            ProducerRecord<String, String> record = new ProducerRecord<String, String>("firstTopic", "message" + i);
             producer.send(record, new Callback() {
                 @Override
                 public void onCompletion(RecordMetadata recordMetadata, Exception e) {
@@ -43,7 +42,6 @@ public class ProducerDemoKeys {
                 }
             });
         }
-        //create a producer record and send - asyncchronous
 
         //flush the data
         producer.flush();
