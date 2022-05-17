@@ -5,7 +5,16 @@
     <option name="originalFiles">
       <list>
         <option value="$PROJECT_DIR$/pom.xml" />
+        <option value="$PROJECT_DIR$/KafkaTwitterProject/pom.xml" />
+        <option value="$PROJECT_DIR$/KafkaBasics/pom.xml" />
+        <option value="$PROJECT_DIR$/KafkaTwitterConsumer/pom.xml" />
+        <option value="$PROJECT_DIR$/KafkaTwitterProducer/pom.xml" />
       </list>
+    </option>
+    <option name="ignoredFiles">
+      <set>
+        <option value="$PROJECT_DIR$/KafkaTwitterProject/KafkaConsumerTwitterElasticSearch/pom.xml" />
+      </set>
     </option>
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_X" default="true" project-jdk-name="adopt-1.8" project-jdk-type="JavaSDK">
