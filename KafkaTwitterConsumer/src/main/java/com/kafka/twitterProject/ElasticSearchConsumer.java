@@ -6,6 +6,11 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -17,6 +22,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.Properties;
 
 public class ElasticSearchConsumer {
 
@@ -24,8 +32,8 @@ public class ElasticSearchConsumer {
 
         //bonsai full access
         String hostname = "kafka-twitter-projec-530887733.us-west-2.bonsaisearch.net";
-        String username = "8xyhlzdzlw";
-        String password = "uyzinv5zp1";
+        String username = "xnyldrn5vk";
+        String password = "ouikzn4nvs";
 
         //don't do if you run a local ES
         final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
@@ -45,21 +53,70 @@ public class ElasticSearchConsumer {
         return client;
     }
 
+    public static KafkaConsumer<String, String> createConsumer(String topic) {
+        Properties properties = new Properties();
+        String bootstrapServers = "localhost:9092";
+        String groupId = "kafka-demo-elasticsearch";
+
+        // consumer properties: https://docs.confluent.io/platform/current/installation/configuration/consumer-configs.html
+        properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+
+        //earliest: from the beginning; latest: message onwards
+        properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
+        //create consumer
+        KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(properties);
+
+        //subscribe consumer to our topic
+        consumer.subscribe(Arrays.asList(topic));
+        return consumer;
+    }
+
     public static void main(String[] args) throws IOException {
         Logger logger = LoggerFactory.getLogger(ElasticSearchConsumer.class.getName());
         RestHighLevelClient client = createClient();
 
-        String jsonString = "{\"foo\" : \"bar\"}";
-        IndexRequest indexRequest = new IndexRequest(
-                "twitter",
-                "tweets"
-        ).source(jsonString, XContentType.JSON);
+        // create consumer
+        KafkaConsumer<String, String> consumer = createConsumer("TwitterElasticSearch");
+        //poll for new data
 
-        IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
-        String id = indexResponse.getId();
-        logger.info(id);
+
+//        String jsonString = "{\"foo\" : \"bar\"}";
+//        IndexRequest indexRequest = new IndexRequest(
+//                "twitter",
+//                "tweets"
+//        ).source(jsonString, XContentType.JSON);
+//
+//        IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
+//        String id = indexResponse.getId();
+//        logger.info(id);
+//        client.close();
+
+        while(true) {
+            ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+
+            for (ConsumerRecord<String, String> record: records) {
+                logger.info(record.value());
+                IndexRequest indexRequest = new IndexRequest(
+                        "twitter",
+                        "tweets"
+                ).source(record.value(), XContentType.JSON);
+
+                IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
+                String id = indexResponse.getId();
+                logger.info(id);
+                try {
+                    Thread.sleep(1000);  //introduce small delay
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
 
         // close the client gracefully
-        client.close();
+        // client.close();
     }
 }

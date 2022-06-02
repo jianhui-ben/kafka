@@ -71,7 +71,7 @@ public class twitterProducer {
     public void sendTweetsToProducer(BufferedReader StreamTweetsReader, KafkaProducer<String, String> producer) throws IOException {
         String tweet = StreamTweetsReader.readLine();
         while (tweet != null) {
-            ProducerRecord<String, String> record = new ProducerRecord<String, String>("tweetsTopic", tweet);
+            ProducerRecord<String, String> record = new ProducerRecord<String, String>("TwitterElasticSearch", tweet);
             producer.send(record, new Callback() {
                 @Override
                 public void onCompletion(RecordMetadata recordMetadata, Exception e) {
