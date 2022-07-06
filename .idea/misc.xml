@@ -9,6 +9,7 @@
         <option value="$PROJECT_DIR$/KafkaBasics/pom.xml" />
         <option value="$PROJECT_DIR$/KafkaTwitterConsumer/pom.xml" />
         <option value="$PROJECT_DIR$/KafkaTwitterProducer/pom.xml" />
+        <option value="$PROJECT_DIR$/KafkaStreamFilterTweets/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">

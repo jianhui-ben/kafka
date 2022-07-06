@@ -1,5 +1,6 @@
 package com.kafka.twitterProject;
 
+import com.google.gson.JsonParser;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -11,6 +12,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -64,6 +67,10 @@ public class ElasticSearchConsumer {
         properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, groupId);
 
+        //this is for switching to manual commit for making sure we inserted all the messages
+        properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+        properties.setProperty(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "10"); // for easy counting
+
         //earliest: from the beginning; latest: message onwards
         properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
@@ -83,7 +90,7 @@ public class ElasticSearchConsumer {
         KafkaConsumer<String, String> consumer = createConsumer("TwitterElasticSearch");
         //poll for new data
 
-
+//        //send a sample data to ES
 //        String jsonString = "{\"foo\" : \"bar\"}";
 //        IndexRequest indexRequest = new IndexRequest(
 //                "twitter",
@@ -97,26 +104,60 @@ public class ElasticSearchConsumer {
 
         while(true) {
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+            Integer recordCount =  records.count();
+            logger.info("Received " + records.count() + " records");
+
+            BulkRequest bulkRequest = new BulkRequest(); // for adding multiple requests
 
             for (ConsumerRecord<String, String> record: records) {
                 logger.info(record.value());
-                IndexRequest indexRequest = new IndexRequest(
-                        "twitter",
-                        "tweets"
-                ).source(record.value(), XContentType.JSON);
 
-                IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
-                String id = indexResponse.getId();
-                logger.info(id);
+                // 2 strategies to make kafka message idempotent
+                // kafka generic id:
+                // String id = record.topic() + '_' + record.partition() + '_' + record.offset();
+
                 try {
-                    Thread.sleep(1000);  //introduce small delay
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    String id = extractIdFromTweets(record.value());
+                    IndexRequest indexRequest = new IndexRequest(
+                            "twitter",
+                            "tweets",
+                            id
+                    ).source(record.value(), XContentType.JSON);
+
+                    bulkRequest.add(indexRequest); //we add to our bulk request (takes no time)
+                } catch (IllegalStateException e) {
+                    logger.warn("skipping bad data" + record.value()); // some bad tweet data may not have id
                 }
+
+//                IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
+//                logger.info(indexResponse.getId());
+//                try {
+//                    Thread.sleep(1000);  //introduce small delay
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+            }
+            if (recordCount > 0) {
+                BulkResponse bulkItemResponses = client.bulk(bulkRequest, RequestOptions.DEFAULT);
+            }
+            logger.info("Committing offsets...");
+            consumer.commitSync(); //for manual commit of offsets
+            logger.info("Offsets have been committed");
+            try {
+                Thread.sleep(1000);  //introduce small delay
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
 
         // close the client gracefully
         // client.close();
+    }
+
+    private static JsonParser jsonParser = new JsonParser();
+    public static String extractIdFromTweets(String tweetJson){
+        //gson library
+        return jsonParser.parse(tweetJson).getAsJsonObject().get("data")
+                .getAsJsonObject().get("id").getAsString();
     }
 }
